@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test de Pareja 💬</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    body {
+      background-color: #0b0f19;
+      color: #f2f2f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px;
+    }
+
+    .card {
+      background: #161f30;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 28px 20px;
+      border-radius: 28px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      position: relative;
+      transition: transform 0.1s ease;
+    }
+
+    /* Animación de sacudida cuando falla */
+    .shake-error {
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .step-tag {
+      font-size: 0.75rem;
+      color: #30d158;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+      line-height: 1.35;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .opt-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f2f2f7;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    }
+
+    /* Clases dinámicas de feedback */
+    .opt-btn.correct-choice {
+      background: rgba(48, 209, 88, 0.25) !important;
+      border-color: #30d158 !important;
+      color: #fff !important;
+    }
+
+    .opt-btn.wrong-choice {
+      background: rgba(255, 69, 58, 0.25) !important;
+      border-color: #ff453a !important;
+      color: #fff !important;
+    }
+
+    .opt-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* CONTENEDOR INICIAL (9, 10, 11, 12) */
+    .sequence-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 18px 10px;
+      border-radius: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      cursor: pointer;
+      user-select: none;
+      min-height: 70px;
+      align-items: center;
+    }
+
+    .seq-num {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .seq-num.active-red {
+      opacity: 1;
+      transform: scale(1);
+      background: #ff453a;
+      color: #fff;
+      text-decoration: line-through;
+      box-shadow: 0 0 12px rgba(255, 69, 58, 0.5);
+    }
+
+    .seq-num.active-green {
+      opacity: 1;
+      transform: scale(1.15);
+      background: #30d158;
+      color: #000;
+      box-shadow: 0 0 20px rgba(48, 209, 88, 0.8);
+    }
+
+    /* CALENDARIO DE AGOSTO REVELADO */
+    .calendar-box {
+      display: none;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 14px 10px;
+      border-radius: 20px;
+      margin-top: 15px;
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .calendar-header {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #8e8e93;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .weekdays-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #8e8e93;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .day {
+      aspect-ratio: 1;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      color: #8e8e93;
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: 600;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .day.empty { background: transparent; }
+
+    .day.old {
+      background: #ff453a;
+      color: #fff;
+      text-decoration: line-through;
+      box-shadow: 0 0 10px rgba(255, 69, 58, 0.5);
+    }
+
+    .day.new {
+      background: #30d158;
+      color: #000;
+      font-weight: 800;
+      box-shadow: 0 0 18px rgba(48, 209, 88, 0.8);
+      transform: scale(1.1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Modal emergente final */
+    .final-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(11, 15, 25, 0.9);
+      backdrop-filter: blur(10px);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal-card {
+      background: #1c273e;
+      border: 2px solid #30d158;
+      padding: 30px 20px;
+      border-radius: 28px;
+      width: 85%;
+      max-width: 320px;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(48, 209, 88, 0.3);
+      animation: popIn 0.4s ease forwards;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="quizContainer">
+    
+    <!-- PREGUNTA 1 -->
+    <div class="quiz-step" id="step1">
+      <div class="step-tag">Pregunta 1 de 12</div>
+      <h2>¿Qué día nos mandamos el primer mensaje por Instagram? 📲</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 2)">El 20 de julio</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 2)">El 25 de julio</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 2)">El 27 de julio</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 2)">El 1 de agosto</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 2 -->
+    <div class="quiz-step" id="step2" style="display: none;">
+      <div class="step-tag">Pregunta 2 de 12</div>
+      <h2>¿Dónde nos vimos en persona por primera vez? 🕺</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 3)">En una cafetería</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 3)">En la plaza</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 3)">En Zavod</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 3)">En un bar de la costanera</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 3 -->
+    <div class="quiz-step" id="step3" style="display: none;">
+      <div class="step-tag">Pregunta 3 de 12</div>
+      <h2>¿Qué detalle tuvo nuestra primera cita en la cafetería? ☕</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 4)">Llegamos dos horas tarde</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 4)">Tuvimos una amiga de third wheel</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 4)">Nos quedamos sin tema de conversación</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 4)">Nos llovió a la salida</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 4 -->
+    <div class="quiz-step" id="step4" style="display: none;">
+      <div class="step-tag">Pregunta 4 de 12</div>
+      <h2>¿Dónde y qué fecha nos pusimos de novios? ❤️</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 5)">El 27 de julio en Zavod</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 5)">El 9 de noviembre en mi campo</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 5)">El 15 de diciembre en la ciudad</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 5)">El 1 de enero en año nuevo</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 5 -->
+    <div class="quiz-step" id="step5" style="display: none;">
+      <div class="step-tag">Pregunta 5 de 12</div>
+      <h2>¿Quién es mi cantante favorita indiscutida de la vida? 🎧</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 6)">Dua Lipa</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 6)">Olivia Rodrigo</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 6)">Taylor Swift</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 6)">Lana Del Rey</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 6 -->
+    <div class="quiz-step" id="step6" style="display: none;">
+      <div class="step-tag">Pregunta 6 de 12</div>
+      <h2>¿Cuál es mi saga de películas favorita para maratonear? 🎬</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 7)">Star Wars</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 7)">Los Juegos del Hambre</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 7)">Harry Potter</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 7)">Todas las anteriores</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 7 -->
+    <div class="quiz-step" id="step7" style="display: none;">
+      <div class="step-tag">Pregunta 7 de 12</div>
+      <h2>¿Quién es más mañoso con la comida de los dos? 🍕</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, true, 8)">Nacho</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 8)">Bruno</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 8)">Los dos por igual</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 8)">Ninguno, comemos cualquier cosa</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 8 -->
+    <div class="quiz-step" id="step8" style="display: none;">
+      <div class="step-tag">Pregunta 8 de 12</div>
+      <h2>¿Quién se duerme más rápido viendo una peli? 🍿</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 9)">Nacho</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 9)">Bruno</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 9)">Depende del día</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 9)">Ninguno, las terminamos todas</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 9 -->
+    <div class="quiz-step" id="step9" style="display: none;">
+      <div class="step-tag">Pregunta 9 de 12</div>
+      <h2>A ver qué tan atento venís... ¿Cuántas preguntas tiene este quiz? 🧐</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 10)">8 preguntas</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 10)">10 preguntas</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 10)">12 preguntas</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 10)">15 preguntas</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 10 -->
+    <div class="quiz-step" id="step10" style="display: none;">
+      <div class="step-tag">Pregunta 10 de 12</div>
+      <h2>¿A qué mes corresponde el número de la pregunta actual (10)? 📅</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, false, 11)">Julio</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 11)">Septiembre</button>
+        <button class="opt-btn" onclick="checkAnswer(this, false, 11)">Octubre</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 11)">Agosto</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 11 -->
+    <div class="quiz-step" id="step11" style="display: none;">
+      <div class="step-tag">Pregunta 11 de 12</div>
+      <h2>¿Sabés qué significa el 12 de Agosto? 🤔</h2>
+      <div class="options">
+        <button class="opt-btn" onclick="checkAnswer(this, true, 12)">No, ni idea...</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 12)">¿Algún aniversario?</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 12)">¿Un día cualquiera?</button>
+        <button class="opt-btn" onclick="checkAnswer(this, true, 12)">Exijo una explicación</button>
+      </div>
+    </div>
+
+    <!-- PREGUNTA 12 (TITULO) -->
+    <div class="quiz-step" id="step12" style="display: none;">
+      <div class="step-tag" style="color: #ff9f0a;">Pregunta 12 de 12</div>
+      <h2>¿Querés saber qué significa? 🤫</h2>
+      <p style="font-size: 0.85rem; color: #8e8e93; margin-bottom: 10px;">Tocá la caja para descubrirlo:</p>
+    </div>
+
+    <!-- CAJA INICIAL LIMPIA (SOLO PARA 9, 10, 11, 12) -->
+    <div class="sequence-box" id="sequenceBox" style="display: none;">
+      <div class="seq-num" id="n9">9</div>
+      <div class="seq-num" id="n10">10</div>
+      <div class="seq-num" id="n11">11</div>
+      <div class="seq-num" id="n12">12</div>
+    </div>
+
+    <!-- CALENDARIO COMPLETO DE AGOSTO (REVELADO AL FINAL) -->
+    <div class="calendar-box" id="calendarBox">
+      <div class="calendar-header">Agosto 2026</div>
+      
+      <div class="weekdays-grid">
+        <div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div>
+      </div>
+
+      <div class="calendar-grid">
+        <div class="day empty"></div><div class="day empty"></div><div class="day empty"></div>
+        <div class="day empty"></div><div class="day empty"></div>
+        
+        <div class="day">1</div><div class="day">2</div><div class="day">3</div>
+        <div class="day">4</div><div class="day">5</div><div class="day">6</div>
+        <div class="day">7</div><div class="day">8</div>
+        
+        <div class="day old">9</div>
+        <div class="day old">10</div>
+        <div class="day old">11</div>
+        <div class="day new">12</div>
+
+        <div class="day">13</div><div class="day">14</div><div class="day">15</div>
+        <div class="day">16</div><div class="day">17</div><div class="day">18</div>
+        <div class="day">19</div><div class="day">20</div><div class="day">21</div>
+        <div class="day">22</div><div class="day">23</div><div class="day">24</div>
+        <div class="day">25</div><div class="day">26</div><div class="day">27</div>
+        <div class="day">28</div><div class="day">29</div><div class="day">30</div>
+        <div class="day">31</div>
+      </div>
+    </div>
+
+    <!-- BOTÓN FINAL REVELADO -->
+    <button id="finalAskBtn" onclick="showFinalModal()" style="display: none; background: #30d158; border: none; padding: 16px; border-radius: 16px; font-weight: 800; color: #000; font-size: 1.05rem; width: 100%; cursor: pointer; margin-top: 15px; box-shadow: 0 0 20px rgba(48, 209, 88, 0.4);">
+      ¿Ya sabés qué es? ✨
+    </button>
+
+  </div>
+
+  <!-- MODAL FINAL (PANTALLA CON CONFETTI) -->
+  <div class="final-modal" id="finalModal">
+    <div class="modal-card">
+      <div style="font-size: 3.5rem; margin-bottom: 10px;">🎉✈️❤️</div>
+      <h2 style="color: #30d158; font-size: 1.6rem; margin-bottom: 8px;">¡SORPRESA!</h2>
+      <p style="font-size: 1.1rem; color: #fff; line-height: 1.4; margin-bottom: 24px;">
+        Se cancela el regreso del 9...<br><br>
+        <strong style="font-size: 1.3rem; color: #30d158;">¡Me voy el 12! ❤️</strong>
+      </p>
+      <button onclick="document.getElementById('finalModal').style.display='none'" style="background: #30d158; border: none; padding: 14px 28px; border-radius: 14px; font-weight: 700; color: #000; font-size: 1rem; width: 100%; cursor: pointer;">
+        ¡A disfrutar los días extra! 🙌
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById('quizContainer');
+
+    function checkAnswer(btn, isCorrect, nextStepNum) {
+      if (!isCorrect) {
+        if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
+        
+        btn.classList.add('wrong-choice');
+        container.classList.add('shake-error');
+
+        setTimeout(() => {
+          btn.classList.remove('wrong-choice');
+          container.classList.remove('shake-error');
+        }, 600);
+
+      } else {
+        if (navigator.vibrate) navigator.vibrate(40);
+        
+        btn.classList.add('correct-choice');
+
+        setTimeout(() => {
+          btn.classList.remove('correct-choice');
+          nextStep(nextStepNum);
+        }, 300);
+      }
+    }
+
+    function nextStep(currentStep) {
+      const steps = document.querySelectorAll('.quiz-step');
+      steps.forEach(step => step.style.display = 'none');
+
+      document.getElementById(`step${currentStep}`).style.display = 'block';
+
+      if (currentStep === 12) {
+        document.getElementById('sequenceBox').style.display = 'flex';
+      }
+    }
+
+    let seqClicks = 0;
+    const sequenceBox = document.getElementById('sequenceBox');
+    const calendarBox = document.getElementById('calendarBox');
+    const finalAskBtn = document.getElementById('finalAskBtn');
+
+    sequenceBox.addEventListener('click', () => {
+      seqClicks++;
+
+      if (seqClicks === 1) {
+        if (navigator.vibrate) navigator.vibrate(50);
+        document.getElementById('n9').className = 'seq-num active-red';
+      } else if (seqClicks === 2) {
+        if (navigator.vibrate) navigator.vibrate(60);
+        document.getElementById('n10').className = 'seq-num active-red';
+      } else if (seqClicks === 3) {
+        if (navigator.vibrate) navigator.vibrate(70);
+        document.getElementById('n11').className = 'seq-num active-red';
+      } else if (seqClicks === 4) {
+        if (navigator.vibrate) navigator.vibrate([60, 100, 60]);
+        document.getElementById('n12').className = 'seq-num active-green';
+
+        setTimeout(() => {
+          document.getElementById('step12').style.display = 'none';
+          sequenceBox.style.display = 'none';
+          calendarBox.style.display = 'block';
+          finalAskBtn.style.display = 'block';
+        }, 600);
+      }
+    });
+
+    function showFinalModal() {
+      if (navigator.vibrate) navigator.vibrate([60, 100, 60]);
+
+      document.getElementById('finalModal').style.display = 'flex';
+
+      confetti({
+        particleCount: 140,
+        spread: 90,
+        origin: { y: 0.55 }
+      });
+    }
+  </script>
+</body>
+</html>
